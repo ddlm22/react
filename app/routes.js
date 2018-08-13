@@ -59,6 +59,26 @@ export default function createRoutes(store) {
         importModules.catch(errorLoading);
       },
     }, {
+      path: '/maestro',
+      name: 'maestros',
+      getComponent(nextState, cb) {
+        const importModules = Promise.all([
+          import('containers/Maestros/reducer'),
+          import('containers/Maestros/sagas'),
+          import('containers/Maestros'),
+        ]);
+
+        const renderRoute = loadModule(cb);
+
+        importModules.then(([reducer, sagas, component]) => {
+          injectReducer('maestros', reducer.default);
+          injectSagas(sagas.default);
+          renderRoute(component);
+        });
+
+        importModules.catch(errorLoading);
+      },
+    }, {
       path: '*',
       name: 'notfound',
       getComponent(nextState, cb) {
