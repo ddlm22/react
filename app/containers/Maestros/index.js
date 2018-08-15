@@ -20,6 +20,9 @@ import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
 import { createStructuredSelector } from 'reselect';
+import FlechitaAbajoIcon from 'material-ui/svg-icons/navigation/arrow-downward';
+import FlechitaArribaIcon from 'material-ui/svg-icons/navigation/arrow-upward';
+import NeutroIcon from 'material-ui/svg-icons/action/compare-arrows';
 import makeSelectMaestros from './selectors';
 
 
@@ -46,16 +49,25 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
       },
     ],
     open: false,
+    openedit: false,
     posicion: -1,
     matricula: '',
     nombre: '',
     materias: 0,
     area: '',
+    filtro: '',
+    orden: 'down',
   }
 
 
   handleOpen = () => {
-    this.setState({ open: true });
+    this.setState({
+      open: true,
+      matricula: '',
+      nombre: '',
+      materias: '',
+      area: '',
+    });
   };
 
   handleClose = () => {
@@ -89,8 +101,20 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
     this.setState({ arreMestros: newMaestro });
   }
 
+  handleCloseEdit = () => {
+    this.setState({ openedit: false });
+  };
+
   handleOpenEdit = (index) => {
-    this.setState({ open: true, posicion: index });
+    const { arreMestros } = this.state;
+    this.setState({
+      openedit: true,
+      posicion: index,
+      matricula: arreMestros[index].matricula,
+      nombre: arreMestros[index].nombre,
+      materias: arreMestros[index].materias,
+      area: arreMestros[index].area,
+    });
   };
 
   handleEditMaestro = () => {
@@ -111,10 +135,39 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
     };
 
     arreMestros[posicion] = newMaestro;
-    this.setState({ arreMestros, open: false });
+    this.setState({ arreMestros, openedit: false });
   }
 
   render() {
+    const { arreMestros, filtro, orden } = this.state;
+    const arreMestrosordenado = arreMestros.sort((a, b) => {
+      switch (filtro) {
+        case 'matricula':
+          if (orden === 'up') {
+            return a.matricula < b.matricula;
+          }
+          return a.matricula > b.matricula;
+        case 'nombre':
+          if (orden === 'up') {
+            return a.nombre < b.nombre;
+          }
+          return a.nombre > b.nombre;
+        case 'materias':
+          if (orden === 'up') {
+            return a.materias < b.materias;
+          }
+          return a.materias > b.materias;
+        case 'area':
+          if (orden === 'up') {
+            return a.area < b.area;
+          }
+          return a.area > b.area;
+        default:
+          return a.matricula < b.matricula;
+      }
+    });
+
+    // ACCIONES DE DIALOGO
     const actions = [
       <FlatButton
         label="Cancelar"
@@ -133,7 +186,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
       <FlatButton
         label="Cancelar"
         primary
-        onClick={this.handleClose}
+        onClick={this.handleCloseEdit}
       />,
       <FlatButton
         label="Actualizar"
@@ -143,22 +196,81 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
       />,
     ];
 
-    const { arreMestros } = this.state;
+    // Estilo del cursor
+    const cursor = {
+      cursor: 'pointer',
+    };
+    // TABLA DE ALUMNOS
+    const flechita = orden === 'down' ?
+    (<FlechitaAbajoIcon
+      style={cursor}
+      onClick={() => this.setState({ orden: 'up' })}
+    />)
+    :
+    (<FlechitaArribaIcon
+      style={cursor}
+      onClick={() => this.setState({ orden: 'down' })}
+    />);
+
     const TableExampleSimple = () => (
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHeaderColumn>Matricula</TableHeaderColumn>
-            <TableHeaderColumn>Nombre</TableHeaderColumn>
-            <TableHeaderColumn>Materias</TableHeaderColumn>
-            <TableHeaderColumn>Area</TableHeaderColumn>
+            <TableHeaderColumn>
+              Matricula
+              {
+                filtro === 'matricula' ?
+                flechita
+                :
+                <NeutroIcon
+                  style={cursor}
+                  onClick={() => this.setState({ filtro: 'matricula' })}
+                />
+              }
+            </TableHeaderColumn>
+            <TableHeaderColumn>
+              Nombre
+              {
+                filtro === 'nombre' ?
+                flechita
+                :
+                <NeutroIcon
+                  style={cursor}
+                  onClick={() => this.setState({ filtro: 'nombre' })}
+                />
+              }
+            </TableHeaderColumn>
+            <TableHeaderColumn>
+              Materias
+              {
+                filtro === 'materias' ?
+                flechita
+                :
+                <NeutroIcon
+                  style={cursor}
+                  onClick={() => this.setState({ filtro: 'materias' })}
+                />
+              }
+            </TableHeaderColumn>
+            <TableHeaderColumn>
+              Area
+              {
+                filtro === 'area' ?
+                flechita
+                :
+                <NeutroIcon
+                  style={cursor}
+                  onClick={() => this.setState({ filtro: 'area' })}
+                />
+              }
+            </TableHeaderColumn>
             <TableHeaderColumn></TableHeaderColumn>
             <TableHeaderColumn></TableHeaderColumn>
           </TableRow>
         </TableHeader>
         <TableBody>
           {
-            arreMestros.map((item, index) => (
+            arreMestrosordenado.map((item, index) => (
               <TableRow>
                 <TableRowColumn>{item.matricula}</TableRowColumn>
                 <TableRowColumn>{item.nombre}</TableRowColumn>
@@ -214,6 +326,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Matricula"
             fullWidth
+            value={this.state.matricula}
             onChange={(event, newString) => {
               this.setState({ matricula: newString });
             }}
@@ -221,6 +334,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Nombre"
             fullWidth
+            value={this.state.nombre}
             onChange={(event, newString) => {
               this.setState({ nombre: newString });
             }}
@@ -228,6 +342,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Materias"
             fullWidth
+            value={this.state.materias}
             onChange={(event, newString) => {
               this.setState({ materias: newString });
             }}
@@ -235,6 +350,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Area"
             fullWidth
+            value={this.state.area}
             onChange={(event, newString) => {
               this.setState({ area: newString });
             }}
@@ -245,12 +361,13 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           title="Actualizar Maestro"
           actions={actionsEditar}
           modal={false}
-          open={this.state.open}
-          onRequestClose={this.handleClose}
+          open={this.state.openedit}
+          onRequestClose={this.handleCloseEdit}
         >
           <TextField
             hintText="Matricula"
             fullWidth
+            value={this.state.matricula}
             onChange={(event, newString) => {
               this.setState({ matricula: newString });
             }}
@@ -258,6 +375,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Nombre"
             fullWidth
+            value={this.state.nombre}
             onChange={(event, newString) => {
               this.setState({ nombre: newString });
             }}
@@ -265,6 +383,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Materias"
             fullWidth
+            value={this.state.materias}
             onChange={(event, newString) => {
               this.setState({ materias: newString });
             }}
@@ -272,6 +391,7 @@ export class Maestros extends React.Component { // eslint-disable-line react/pre
           <TextField
             hintText="Area"
             fullWidth
+            value={this.state.area}
             onChange={(event, newString) => {
               this.setState({ area: newString });
             }}
